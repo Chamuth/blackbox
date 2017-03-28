@@ -234,7 +234,7 @@ function shred_file() {
     CMD=rm
     OPT=-f
   fi
-
+  chmod +w "$name"
   $CMD $OPT -- "$name"
 }
 
