@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+#
+# blackbox_partialdeploy.sh -- Decrypt all files within a specified tree.
+#
+
+# Usage:
+#   blackbox_partialdeploy.sh <FOLDER_TO_BE_DECRYPTED>
+
+set -e
+blackbox_home=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+source "${blackbox_home}/_blackbox_common.sh"
+
+FOLDER_TO_BE_DECRYPTED=$(echo "$1"| tr -d '/')
+if [[ -z $FOLDER_TO_BE_DECRYPTED ]]; then
+  echo ERROR: Please specify a folder to be decrypted.
+  exit 1
+fi
+
+if [ ! -d $FOLDER_TO_BE_DECRYPTED ] ; then
+  echo ERROR: Please specify an existing folder.
+  exit 1
+fi
+
+change_to_vcs_root
+prepare_keychain
+
+# Decrypt:
+echo '========== Decrypting new/changed files: START'
+while IFS= read <&99 -r unencrypted_file; do
+  if [[ "$unencrypted_file" == $FOLDER_TO_BE_DECRYPTED/* ]]; then
+    encrypted_file=$(get_encrypted_filename "$unencrypted_file")
+    decrypt_file_overwrite "$encrypted_file" "$unencrypted_file"
+    chmod g+r "$unencrypted_file"
+  fi
+done 99<"$BB_FILES"
+
+echo '========== Decrypting new/changed files: DONE'
